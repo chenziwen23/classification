@@ -1,0 +1,97 @@
+#common:
+model_name: "mobilevit-xxs"
+run_label: "run_1"
+log_freq: 500
+seed: 100
+mixed_precision: false
+
+#dataset / data augmentation
+dataset:
+    root_dir: "/mnt/chenziwen/Datasets/images"
+    txt_path: "/mnt/chenziwen/cv/capreg/label_watch.txt"
+#    root_dir: "/mnt/chenziwen/Datasets/dc/train"
+#    txt_path: "/mnt/chenziwen/Datasets/dc/label.txt"
+    category: "classification"
+    train_batch_size: 256
+    val_batch_size: 256
+    eval_batch_size: 256
+    turbo: true
+    workers: 8
+    persistent_workers: false
+    pin_memory: true
+    #       color_jitter
+    brightness: 0.4
+    contrast: 0.4
+    saturation: 0.2
+    hue: 0.1
+    #           Mixup params
+    mixup: 0.8    # 'mixup alpha, mixup enabled if > 0. (default: 0.8)'
+    cutmix: 1.0   # 'cutmix alpha, cutmix enabled if > 0. (default: 1.0)'
+    #           Random Erase params
+    reprob: 0.25
+    remode: "pixel"
+    recount: 1
+    #       sampler:
+    sampler_name: "batch_sampler"
+    width: 256
+    height: 256
+    smoothing: 0.1    # Label smoothing (default: 0.1)
+    interpolation: "bicubic"    # Training interpolation (random, bilinear, bicubic default: "bicubic")
+
+#save model
+output_dir: '/mnt/chenziwen/cv/capreg/checkpoints'
+
+#Learning rate schedule parameters
+sched: "cosine"
+lr: 0.001
+epochs: 50
+cooldown_epochs: 2
+warmup_epochs: 0
+warmup_lr: 0.000001
+min_lr: 0.00001
+decay_rate: 0.1
+
+#Optimizer parameters
+optimizer: "adamw"
+momentum: 0.9
+weight_decay: 0.05
+
+#model:
+model:
+    num_classes: 2
+    dims: [64, 80, 96]
+    transformer_blocks: [2, 4, 3]
+    channels: [16, 16, 24, 24, 48, 64, 80, 320]
+    expansion: 2
+    finetune: "/mnt/chenziwen/cv/capreg/checkpoints/mobilevit_xxs.pt"
+    classifier_dropout: 0.1
+    #   mit:
+    mode: "xx_small"
+    ffn_dropout: 0.0
+    attn_dropout: 0.0
+    dropout: 0.05
+    number_heads: 4
+    no_fuse_local_global_features: false
+    conv_kernel_size: 3
+    patch_size: 2
+    activation: "swish"
+    normalization_name: "batch_norm_2d"
+    normalization_momentum: 0.1
+    #   layer:
+    global_pool: "mean"
+    conv_init: "kaiming_normal"
+    linear_init: "trunc_normal"
+    linear_init_std_dev: 0.02
+
+#ddp:
+device_type: "cuda"    # cpu, cuda
+cuda_device: [0]    # [0, 1, 2, 3]
+enable: false
+rank: 0
+world_size: -1
+dist_port: 30786
+
+#stats:
+stats_name: [ "loss", "top1", "top5" ]
+checkpoint_metric: "top1"
+checkpoint_metric_max: true
