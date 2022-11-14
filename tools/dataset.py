@@ -11,16 +11,43 @@ import cv2
 import albumentations
 import jpeg4py as jpeg
 from turbojpeg import TurboJPEG
+from PIL import Image, ImageFilter
 from typing import Optional, Tuple, List
 
 import torch
 from torch.utils.data import Dataset, DataLoader, random_split, DistributedSampler, RandomSampler, SequentialSampler
+from torchvision.transforms import Compose, ToTensor, Resize, RandomHorizontalFlip
 
 interpolation_supported = {
     "linear": cv2.INTER_LINEAR,
     "bicubic": cv2.INTER_CUBIC,
     "nearest": cv2.INTER_NEAREST,
 }
+
+
+class baseDataset(Dataset):
+    def __init__(self, basedir, txtfile, transform=None):
+        if isinstance(type(txtfile), str):
+            with open(txtfile, 'r') as f:
+                self.img_list = f.readlines()
+        else:
+            self.img_list = txtfile
+
+        self.basedir = basedir
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.img_list)
+
+    def __getitem__(self, idx):
+        img2lab = self.img_list[idx].strip('\n').split(',')
+        image = Image.open(os.path.join(self.basedir, img2lab[0])).convert('L')
+        image = image.filter(ImageFilter.FIND_EDGES).convert('RGB')
+        label = int(img2lab[1])
+
+        image = self.transform(image)
+
+        return image, torch.tensor(label, dtype=torch.long)
 
 
 class jpegDataset(Dataset):
@@ -121,6 +148,7 @@ class data_prefetcher():
     def __len__(self):
         return len(self.loader)
 
+
 def get_loader(args: Optional[dict], transformTrain = None, transformTest = None, dist_mode = None, **kwargs):
     num_tasks = kwargs.get('num_tasks', None)
     global_rank = kwargs.get('global_rank', None)
@@ -139,16 +167,23 @@ def get_loader(args: Optional[dict], transformTrain = None, transformTest = None
         f.close()
 
     dataTest = None
-    if args['turbo'] is True:
-        dataTrain = turboDataset(basedir, trainPath, transform=transformTrain)
-        dataEval = turboDataset(basedir, evalPath, transform=transformTest)
-        if testPath:
-            dataTest = turboDataset(basedir, testPath, transform=transformTest)
-    else:
-        dataTrain = jpegDataset(basedir, trainPath, transform=transformTrain)
-        dataEval = jpegDataset(basedir, evalPath, transform=transformTest)
-        if testPath:
-            dataTest = jpegDataset(basedir, testPath, transform=transformTest)
+    dataset_supported = {
+        "base": baseDataset,
+        "jpeg4py": jpegDataset,
+        "turbo": turboDataset,
+    }
+    DatasetClass = dataset_supported[args['dataset_method']]
+    if args['dataset_method'] == 'base':
+        transformTrain = Compose([Resize([args['height'], args['width']]),
+                                  RandomHorizontalFlip(),
+                                  ToTensor()])
+        transformTest = Compose([Resize([args['height'], args['width']]),
+                                  ToTensor()])
+
+    dataTrain = DatasetClass(basedir, trainPath, transform=transformTrain)
+    dataEval = DatasetClass(basedir, evalPath, transform=transformTest)
+    if testPath:
+        dataTest = DatasetClass(basedir, testPath, transform=transformTest)
 
     if dist_mode:
         sampler_train = DistributedSampler(dataTrain, num_replicas=num_tasks, rank=global_rank, shuffle=True)

@@ -6,8 +6,9 @@ File Description:
 
 """
 import os
+import cv2
 from io import BytesIO
-from PIL import Image, ImageFile
+from PIL import Image, ImageFile, ImageFilter
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
@@ -62,9 +63,25 @@ def gen_txt_dc(root='/mnt/chenziwen/Datasets/dc/train', path_label='/mnt/chenziw
     print(f'path_label is written in {path_label}')
 
 
+def show(name):
+    root = '/Users/chenziwen/Downloads/CaptureIMGS/images_mini'
+    file_p = os.path.join(root, name)
+    img = Image.open(file_p).convert('L')
+    img = img.filter(ImageFilter.FIND_EDGES)
+    img.show('s')
+    # img = cv2.imread(file_p)
+    # new_img = cv2.Canny(img, 80, 160)
+    # new_img = cv2.cvtColor(new_img, cv2.COLOR_GRAY2RGB)
+    # cv2.imshow('asda ', new_img)
+    # cv2.waitKey(0)
+
+
 def main():
     # img_trans(src, dst)
-    gen_txt_dc()
+    # gen_txt_dc()
+    # show('00005180.jpg')
+    show('00001167.jpg')
+    # show('00005167.jpg')
 
 
 if __name__ == '__main__':

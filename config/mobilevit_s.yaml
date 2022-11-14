@@ -14,7 +14,7 @@ dataset:
     train_batch_size: 64
     val_batch_size: 100
     eval_batch_size: 100
-    turbo: false
+    dataset_method: 'base'      # base, jpeg4py, turbo
     workers: 0
     persistent_workers: false
     pin_memory: true
