@@ -16,17 +16,20 @@ def rename(p):
     imgs_p = os.listdir(p)
     for i in range(len(imgs_p)):
         imgp = os.path.join(p, imgs_p[i])
-        imgp_new = os.path.join(p, f"{i:0>6d}.png")
+        n = imgs_p[i].split('.')[0]
+        if n == '':
+            continue
+        imgp_new = os.path.join(p, f"{int(n):0>8d}.png")
         os.rename(imgp, imgp_new)
         print(f'rename successfully', imgp_new)
 
-    # rename special string
-    imgs_p = os.listdir(p)
-    for i in range(len(imgs_p)):
-        imgp = os.path.join(p, imgs_p[i])
-        imgp_new = os.path.join(p, f"{i}.png")
-        os.rename(imgp, imgp_new)
-        print(f'rename successfully', imgp_new)
+    # # rename special string
+    # imgs_p = os.listdir(p)
+    # for i in range(len(imgs_p)):
+    #     imgp = os.path.join(p, imgs_p[i])
+    #     imgp_new = os.path.join(p, f"{i}.png")
+    #     os.rename(imgp, imgp_new)
+    #     print(f'rename successfully', imgp_new)
 
 
 # 不同文件夹，且需要同步其他文件夹内同文件名字
@@ -158,7 +161,7 @@ if __name__ == '__main__':
     name2label = {"background":0, "cartoon":1, "modern":2, "ancient":3}
     label2name_w = {0: "watching", 1: "unwatching"}
     name2label_w = {"watching":0, "unwatching":1}
-    p = "/Users/chenziwen/Downloads/CaptureIMGS/images"
+    # p = "/Users/chenziwen/Downloads/CaptureIMGS/images"
 
     l = glob.glob("/Users/chenziwen/Downloads/CaptureIMGS/*")
     dl = ['/Users/chenziwen/Downloads/CaptureIMGS/background',
@@ -168,6 +171,9 @@ if __name__ == '__main__':
     watchls = '/Users/chenziwen/Downloads/CaptureIMGS/1/观影中'
     watchlno = '/Users/chenziwen/Downloads/CaptureIMGS/1/观影否'
     watchd = '/Users/chenziwen/Downloads/CaptureIMGS/1'
+
+    p = "/Users/chenziwen/Downloads/CaptureIMGS/background"
+    rename(p)
 
     # syncfile2(dl, watchls, watchlno)
     # syncfile(dl, watchls, watchlno)

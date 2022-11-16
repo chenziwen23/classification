@@ -60,10 +60,7 @@ weight_decay: 0.05
 model:
     num_classes: 2
     dims: [64, 80, 96]
-    transformer_blocks: [2, 4, 3]
-    channels: [16, 16, 24, 24, 48, 64, 80, 320]
-    expansion: 2
-    finetune: "/mnt/chenziwen/cv/capreg/checkpoints/mobilevit_xxs.pt"
+    finetune:
     classifier_dropout: 0.1
     #   mit:
     mode: "xx_small"

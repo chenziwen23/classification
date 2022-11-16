@@ -43,7 +43,8 @@ def img_trans(src, dst):
                 f = f + B'\xff' + B'\xd9'
                 img = Image.open(BytesIO(f)).convert("RGB")
                 img_new = img.resize([960, 540], Image.BILINEAR)
-            # img_new.save(dis_img)
+            # print(img_new.size)
+            img_new.save(dis_img)
 
 
 def gen_txt_dc(root='/mnt/chenziwen/Datasets/dc/train', path_label='/mnt/chenziwen/Datasets/dc/label.txt'):
@@ -51,12 +52,14 @@ def gen_txt_dc(root='/mnt/chenziwen/Datasets/dc/train', path_label='/mnt/chenziw
     img_name_list = os.listdir(root)
     txt_content = []
     for img_n in img_name_list:
-        if 'dog' in img_n:
-            txt_content.append(f"{img_n},{1}\n")
-        elif 'cat' in img_n:
+        # if 'dog' in img_n:
+        #     txt_content.append(f"{img_n},{1}\n")
+        # elif 'cat' in img_n:
+        #     txt_content.append(f"{img_n},{0}\n")
+        # else:
+        #     raise ValueError(f"The image({img_n}) couldn't recognized!")
+        if img_n.split('.')[-1] in ['png', 'jpg']:
             txt_content.append(f"{img_n},{0}\n")
-        else:
-            raise ValueError(f"The image({img_n}) couldn't recognized!")
 
     with open(path_label, 'w') as f:
         f.writelines(txt_content)
@@ -76,19 +79,38 @@ def show(name):
     # cv2.waitKey(0)
 
 
+def alter_txt():
+    path = '/Users/chenziwen/Downloads/CaptureIMGS/label_watch.txt'
+    with open(path, 'r') as f:
+        txt_contents = f.readlines()
+    txt_content_new = []
+    for t in txt_contents:
+        t = t.rstrip('\n').split('.')
+        if int(t[0]) > 5000:
+            t[1] = t[1].replace('0', '1')
+        t = '.'.join(t) + '\n'
+        txt_content_new.append(t)
+        print(t)
+
+    with open(path, 'w') as f:
+        f.writelines(txt_content_new)
+    print(f'path_label is written in {path}')
+
+
 def main():
+    # alter_txt()
     # img_trans(src, dst)
-    # gen_txt_dc()
-    # show('00005180.jpg')
-    show('00001167.jpg')
+    # gen_txt_dc(src, '/Users/chenziwen/Downloads/CaptureIMGS/watching.txt')
+    show('00005180.jpg')
+    # show('00001167.jpg')
     # show('00005167.jpg')
 
 
 if __name__ == '__main__':
     # src = "/Users/chenziwen/Downloads/CaptureIMGS/images"
+    src = "/Users/chenziwen/Downloads/CaptureIMGS/background"
     dst = "/Users/chenziwen/Downloads/CaptureIMGS/images_mini"
-    src = "/Users/chenziwen/Downloads/CaptureIMGS/images/00000831.png"
+    # src = "/Users/chenziwen/Downloads/CaptureIMGS/images/00000831.png"
     # dst = "/Users/chenziwen/Downloads/CaptureIMGS/images/00000831.png"
     main()
-
 

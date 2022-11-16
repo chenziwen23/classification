@@ -33,7 +33,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.CrossEntropyLoss
     print_freq = 10
 
     for samples, targets in metric_logger.log_every(data_loader, print_freq, header):
-        samples = samples.permute(0, 3, 1, 2).to(device, non_blocking=True)
+        samples = samples.to(device, non_blocking=True)
         targets = targets.to(device, non_blocking=True)
 
         if mixup_fn is not None:
@@ -86,7 +86,7 @@ def evaluate(data_loader, model, device, topk=(1, 5)):
         topk = (topk,)
 
     for images, target in metric_logger.log_every(data_loader, 10, header):
-        images = images.permute(0, 3, 1, 2).to(device, non_blocking=True)
+        images = images.to(device, non_blocking=True)
         target = target.to(device, non_blocking=True)
         # compute output
         with torch.cuda.amp.autocast():

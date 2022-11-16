@@ -166,12 +166,11 @@ class MobileViT(nn.Module):
 def mobilevit(args: Dict = None):
     model = MobileViT(args['dims'], args['channels'], args['num_classes'], args['transformer_blocks'], args['expansion'],
                      args['conv_kernel_size'], args['patch_size'], args['number_heads'], args)
-    if os.path.exists(args['finetune']):
+    if isinstance(args['finetune'], str) and os.path.exists(args['finetune']):
         finetune_pt_path = args['finetune']
         model = load_state_from_net(model, finetune_pt_path)
         print("============ loading model weight from {} ... ============".format(finetune_pt_path))
     return model
-
 
 
 def print_mem(x):

@@ -72,7 +72,7 @@ class jpegDataset(Dataset):
         if self.transform is not None:
             image = self.transform(**{"image": image})
 
-        return torch.from_numpy(image['image']), torch.tensor(label, dtype=torch.long)
+        return torch.from_numpy(image['image']).permute(2, 0, 1), torch.tensor(label, dtype=torch.long)
 
 
 class turboDataset(Dataset):
@@ -103,7 +103,7 @@ class turboDataset(Dataset):
         if self.transform is not None:
             image = self.transform(**{"image": image})
 
-        return torch.from_numpy(image['image']), torch.tensor(label, dtype=torch.long)
+        return torch.from_numpy(image['image']).permute(2, 0, 1), torch.tensor(label, dtype=torch.long)
 
 
 class data_prefetcher():
@@ -161,8 +161,9 @@ def get_loader(args: Optional[dict], transformTrain = None, transformTest = None
         f = open(txtPaths, 'r')
         img_list = f.readlines()
         lens = len(img_list)
-        train_l = int(0.9*lens)
+        train_l = int(0.8*lens)
         val_l = lens - train_l
+        print(f"Train data lengths: {train_l}, Val data lengths: {val_l}")
         trainPath, evalPath = random_split(img_list, lengths=[train_l, val_l])
         f.close()
 
