@@ -1,5 +1,5 @@
 #common:
-model_name: "mobilevit-xxs"
+model_name: "myconvnet"
 run_label: "run_1"
 log_freq: 500
 seed: 1234
@@ -59,21 +59,7 @@ weight_decay: 0.05
 #model:
 model:
     num_classes: 2
-    dims: [64, 80, 96]
-    finetune:
-    classifier_dropout: 0.1
-    #   mit:
-    mode: "xx_small"
-    ffn_dropout: 0.0
-    attn_dropout: 0.0
-    dropout: 0.05
-    number_heads: 4
-    no_fuse_local_global_features: false
-    conv_kernel_size: 3
-    patch_size: 2
-    activation: "swish"
-    normalization_name: "batch_norm_2d"
-    normalization_momentum: 0.1
+    finetune: false
     #   layer:
     global_pool: "mean"
     conv_init: "kaiming_normal"
