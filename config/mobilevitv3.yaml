@@ -24,7 +24,7 @@ dataset:
     saturation: 0.2
     hue: 0.1
     #           Mixup params
-    mixup: 0.4    # 'mixup alpha, mixup enabled if > 0. (default: 0.8)'
+    mixup: 0.0    # 'mixup alpha, mixup enabled if > 0. (default: 0.8)'
     cutmix: 0.0   # 'cutmix alpha, cutmix enabled if > 0. (default: 1.0)'
     #           Random Erase params
     reprob: 0.25
@@ -42,7 +42,7 @@ output_dir: '/mnt/chenziwen/cv/capreg/checkpoints'
 
 #Learning rate schedule parameters
 sched: "cosine"
-lr: 0.0003
+lr: 0.0005
 epochs: 200
 cooldown_epochs: 0
 warmup_epochs: 0

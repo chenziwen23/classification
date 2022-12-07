@@ -6,8 +6,15 @@ File Description:
 
 """
 import os
+import random
+import shutil
+import sys
+import time
+
 import cv2
 from io import BytesIO
+
+import numpy as np
 from PIL import Image, ImageFile, ImageFilter
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -24,7 +31,7 @@ def img_trans(src, dst):
             f = f + B'\xff' + B'\xd9'
             img = Image.open(BytesIO(f)).convert("RGB")
             img_new = img.resize([960, 540], Image.BILINEAR)
-        img_new.save(dis_img)
+        img_new.save(dis_img, quality=100)
     else:
         if not os.path.exists(dst):
             os.mkdir(dst)
@@ -44,7 +51,7 @@ def img_trans(src, dst):
                 img = Image.open(BytesIO(f)).convert("RGB")
                 img_new = img.resize([960, 540], Image.BILINEAR)
             # print(img_new.size)
-            img_new.save(dis_img)
+            img_new.save(dis_img, quality=100)
 
 
 def gen_txt_dc(root='/mnt/chenziwen/Datasets/dc/train', path_label='/mnt/chenziwen/Datasets/dc/label.txt'):
@@ -66,51 +73,67 @@ def gen_txt_dc(root='/mnt/chenziwen/Datasets/dc/train', path_label='/mnt/chenziw
     print(f'path_label is written in {path_label}')
 
 
-def show(name):
+def tool(file_p, name, x, y):
+    img_o = Image.open(file_p)
+    img = img_o.filter(ImageFilter.FIND_EDGES)
+    std0 = np.std(img)
+    mean0 = np.mean(img)
+    x.append([std0, mean0])
+    y.append(0 if int(name.split('.')[0]) >= 10000 else 1)
+
+
+def prepare():
     root = '/Users/chenziwen/Downloads/CaptureIMGS/images_mini'
-    file_p = os.path.join(root, name)
-    img = Image.open(file_p).convert('L')
-    img = img.filter(ImageFilter.FIND_EDGES)
-    img.show('s')
-    # img = cv2.imread(file_p)
-    # new_img = cv2.Canny(img, 80, 160)
-    # new_img = cv2.cvtColor(new_img, cv2.COLOR_GRAY2RGB)
-    # cv2.imshow('asda ', new_img)
-    # cv2.waitKey(0)
+    img_list = os.listdir(root)
+    x_feats = []
+    y = []
+    x_feats_t = []
+    y_t = []
+    from concurrent.futures import ThreadPoolExecutor
+    executor = ThreadPoolExecutor(16)
+    random.seed(0)
+    for name in img_list:
+        if 'jpg' not in name:
+            continue
+        file_p = os.path.join(root, name)
+        if random.random() < 0.8:
+            # features.append(executor.submit(tool, file_p, name, x_feats, y))
+            executor.submit(tool, file_p, name, x_feats, y)
+        else:
+            # features.append(executor.submit(tool, file_p, name, x_feats_t, y_t))
+            executor.submit(tool, file_p, name, x_feats_t, y_t)
+    executor.shutdown(wait=True)
 
-
-def alter_txt():
-    path = '/Users/chenziwen/Downloads/CaptureIMGS/label_watch.txt'
-    with open(path, 'r') as f:
-        txt_contents = f.readlines()
-    txt_content_new = []
-    for t in txt_contents:
-        t = t.rstrip('\n').split('.')
-        if int(t[0]) > 5000:
-            t[1] = t[1].replace('0', '1')
-        t = '.'.join(t) + '\n'
-        txt_content_new.append(t)
-        print(t)
-
-    with open(path, 'w') as f:
-        f.writelines(txt_content_new)
-    print(f'path_label is written in {path}')
+    return np.array(x_feats), np.array(y), np.array(x_feats_t), np.array(y_t)
 
 
 def main():
-    # alter_txt()
-    # img_trans(src, dst)
+    img_trans(src, dst)
     # gen_txt_dc(src, '/Users/chenziwen/Downloads/CaptureIMGS/watching.txt')
-    show('00005180.jpg')
-    # show('00001167.jpg')
-    # show('00005167.jpg')
 
 
 if __name__ == '__main__':
     # src = "/Users/chenziwen/Downloads/CaptureIMGS/images"
-    src = "/Users/chenziwen/Downloads/CaptureIMGS/background"
+    # src = "/Users/chenziwen/Downloads/CaptureIMGS/background"
+    src = "/Volumes/KINGSTON/test"
     dst = "/Users/chenziwen/Downloads/CaptureIMGS/images_mini"
     # src = "/Users/chenziwen/Downloads/CaptureIMGS/images/00000831.png"
     # dst = "/Users/chenziwen/Downloads/CaptureIMGS/images/00000831.png"
     main()
+
+
+    file_p = "/Users/chenziwen/Downloads/CaptureIMGS/images_mini/00000831.jpg"
+    # file_p = "/Users/chenziwen/Downloads/CaptureIMGS/images/00000831.png"
+    # img_o = cv2.imread(file_p)
+    # new_h, new_w = img_o.shape[0] // 3, img_o.shape[1] // 3
+    # img_o = cv2.resize(img_o, dsize=(new_w, new_h))
+    # cv2.imshow(' ss', img_o)
+    # cv2.waitKey(0)
+
+    # img = Image.open(file_p)
+    # img1 = img.filter(ImageFilter.FIND_EDGES)
+    # img3 = img.convert('L').filter(ImageFilter.FIND_EDGES)
+    #
+    # img1.show('s')
+    # img3.show('3333')
 

@@ -5,11 +5,11 @@
 File Description:
 
 """
+from .mobilevit import Mobilevit
+from .mobilevitv2 import Mobilevitv2_050, Mobilevitv2_125, Mobilevitv2_175
+from .mobilevitv3 import Semobilevit_s
+from .mobilenetv3 import Mobilenetv3_small_050, Mobilenetv3_small_075, Mobilenetv3_small_100
+
+from .myconvnet import ConvNet
 
 
-def print_hi(name):
-    print(f'Hi, {name}')
-
-
-if __name__ == '__main__':
-    print('Python')

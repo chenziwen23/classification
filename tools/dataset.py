@@ -6,6 +6,7 @@ File Description:
 
 """
 import os
+
 import cv2
 
 import albumentations
@@ -13,10 +14,11 @@ import jpeg4py as jpeg
 from turbojpeg import TurboJPEG
 from PIL import Image, ImageFilter
 from typing import Optional, Tuple, List
+import random
 
 import torch
 from torch.utils.data import Dataset, DataLoader, random_split, DistributedSampler, RandomSampler, SequentialSampler
-from torchvision.transforms import Compose, ToTensor, Resize, RandomHorizontalFlip
+from torchvision.transforms import Compose, ToTensor, Resize, RandomHorizontalFlip, RandomCrop, CenterCrop
 
 interpolation_supported = {
     "linear": cv2.INTER_LINEAR,
@@ -27,7 +29,14 @@ interpolation_supported = {
 
 class baseDataset(Dataset):
     def __init__(self, basedir, txtfile, transform=None):
-        if isinstance(type(txtfile), str):
+        # if isinstance(txtfile, str):
+        #     with open(txtfile, 'r') as f:
+        #         self.img_list = f.readlines()
+        # else:
+        #     self.img_list = txtfile
+
+        # sampler
+        if isinstance(txtfile, str):
             with open(txtfile, 'r') as f:
                 self.img_list = f.readlines()
         else:
@@ -41,10 +50,11 @@ class baseDataset(Dataset):
 
     def __getitem__(self, idx):
         img2lab = self.img_list[idx].strip('\n').split(',')
-        image = Image.open(os.path.join(self.basedir, img2lab[0])).convert('L')
-        image = image.filter(ImageFilter.FIND_EDGES).convert('RGB')
-        label = int(img2lab[1])
 
+        image = Image.open(os.path.join(self.basedir, img2lab[0]))
+        # # 是否动漫
+        # label = 1 if int(img2lab[1]) == 1 else 0
+        label = int(img2lab[1])
         image = self.transform(image)
 
         return image, torch.tensor(label, dtype=torch.long)
@@ -157,6 +167,7 @@ def get_loader(args: Optional[dict], transformTrain = None, transformTest = None
     # define dataset class
     if isinstance(txtPaths, (list, tuple)):
         trainPath, evalPath = txtPaths
+        print(trainPath, evalPath)
     else:   # split dataset
         f = open(txtPaths, 'r')
         img_list = f.readlines()
@@ -164,7 +175,7 @@ def get_loader(args: Optional[dict], transformTrain = None, transformTest = None
         train_l = int(0.8*lens)
         val_l = lens - train_l
         print(f"Train data lengths: {train_l}, Val data lengths: {val_l}")
-        trainPath, evalPath = random_split(img_list, lengths=[train_l, val_l])
+        evalPath, trainPath = random_split(img_list, lengths=[val_l, train_l])
         f.close()
 
     dataTest = None
@@ -175,11 +186,17 @@ def get_loader(args: Optional[dict], transformTrain = None, transformTest = None
     }
     DatasetClass = dataset_supported[args['dataset_method']]
     if args['dataset_method'] == 'base':
-        transformTrain = Compose([Resize([args['height'], args['width']]),
-                                  RandomHorizontalFlip(),
-                                  ToTensor()])
-        transformTest = Compose([Resize([args['height'], args['width']]),
-                                  ToTensor()])
+        transformTrain = Compose([
+            # RandomCrop([args['height'], args['width']]),
+            # Resize([256, 256]),
+            Resize([args['height'], args['width']]),
+            RandomHorizontalFlip(),
+            ToTensor()])
+        transformTest = Compose([
+            # CenterCrop([args['height'], args['width']]),
+            # Resize([256, 256]),
+            Resize([args['height'], args['width']]),
+            ToTensor()])
 
     dataTrain = DatasetClass(basedir, trainPath, transform=transformTrain)
     dataEval = DatasetClass(basedir, evalPath, transform=transformTest)
@@ -188,12 +205,12 @@ def get_loader(args: Optional[dict], transformTrain = None, transformTest = None
 
     if dist_mode:
         sampler_train = DistributedSampler(dataTrain, num_replicas=num_tasks, rank=global_rank, shuffle=True)
-        sampler_val = DistributedSampler(dataEval, num_replicas=num_tasks, rank=global_rank, shuffle=False)
+        sampler_val = DistributedSampler(dataEval, num_replicas=num_tasks, rank=global_rank, shuffle=True)
         if testPath:
             sampler_test = DistributedSampler(dataTest, num_replicas=num_tasks, rank=global_rank, shuffle=False)
     else:
         sampler_train = RandomSampler(dataTrain)
-        sampler_val = SequentialSampler(dataEval)
+        sampler_val = RandomSampler(dataEval)
         if testPath:
             sampler_test = SequentialSampler(dataTest)
 

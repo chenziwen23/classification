@@ -16,7 +16,8 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 
-from models.mobilevit import MobileViT
+# from models.mobilevit import MobileViT
+from models.myconvnet import ConvNet
 
 
 # show unzip dir
@@ -97,8 +98,8 @@ train_data = dataset(train_list, train_transforms)
 val_data = dataset(val_list, test_transforms)
 # test_data = dataset(test_list, transform=test_transforms)
 
-train_loader = DataLoader(dataset=train_data, batch_size=batch_size, shuffle=True)
-val_loader = DataLoader(dataset=val_data, batch_size=batch_size, shuffle=True)
+train_loader = DataLoader(dataset=train_data, batch_size=batch_size, shuffle=True, num_workers=8)
+val_loader = DataLoader(dataset=val_data, batch_size=batch_size, shuffle=False, num_workers=8)
 # test_loader = torch.utils.data.DataLoader(dataset = test_data, batch_size=batch_size, shuffle=True)
 
 print(len(train_data), len(train_loader))
@@ -128,14 +129,14 @@ args = {
     'linear_init_std_dev': 0.02
     }
 
-model = MobileViT(args['dims'], args['channels'], args['num_classes'], args['transformer_blocks'], args['expansion'],
-                     args['conv_kernel_size'], args['patch_size'], args['number_heads'], args)
-model = model.to(device)
+# model = MobileViT(args['dims'], args['channels'], args['num_classes'], args['transformer_blocks'], args['expansion'],
+#                      args['conv_kernel_size'], args['patch_size'], args['number_heads'], args)
+model = ConvNet(args).to(device)
 
 optimizer = optim.Adam(params=model.parameters(), lr=lr)
 loss_f = nn.CrossEntropyLoss()
 
-epochs = 20
+epochs = 100
 
 print('start epoch iter, please wait...')
 for epoch in range(epochs):
@@ -143,15 +144,13 @@ for epoch in range(epochs):
     epoch_accuracy = 0
     model.train()
     best_acc = 0.65
+
     s = time.time()
     print('train')
     for data, label in train_loader:
-        print('load data')
         data = data.to(device)
         label = label.to(device)
-        print('data, label')
         output = model(data)
-        print('output')
         loss = loss_f(output, label)
 
         optimizer.zero_grad()

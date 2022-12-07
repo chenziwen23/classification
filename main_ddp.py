@@ -24,11 +24,25 @@ from timm.utils import NativeScaler
 from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
 from timm.scheduler import create_scheduler
 
-from models.mobilevit import mobilevit
+from models import *
 from trainer.engine import train_one_epoch, evaluate
 from tools.dataset import DataGen
 from tools import utils
 from opts import parser
+from tensorboardX import SummaryWriter
+
+
+supported_model = {
+    "myconvnet": ConvNet,
+    "mobilevit": Mobilevit,
+    "mobilevitv2_050": Mobilevitv2_050,
+    "mobilevitv2_125": Mobilevitv2_125,
+    "mobilevitv2_175": Mobilevitv2_175,
+    "semobilevit_s": Semobilevit_s,
+    "mobilenetv3_small_050": Mobilenetv3_small_050,
+    "mobilenetv3_small_075": Mobilenetv3_small_075,
+    "mobilenetv3_small_100": Mobilenetv3_small_100,
+}
 
 
 def main():
@@ -77,7 +91,7 @@ def main():
     print(f"Data Loader is ready.")
 
     # ============ building student and teacher networks ... ============
-    mvit = mobilevit(args.model).to(device)
+    mvit = supported_model[args.model_name](args.model).to(device)
     print(mvit)
 
     # ddp model
@@ -119,12 +133,15 @@ def main():
     lr_schedule, _ = create_scheduler(args, optimizer)
     print(f"Loss, optimizer and schedulers ready.")
 
+    # ============  tensorboard X  ============
+    summary_writer = SummaryWriter(args.logdir)
+
     # ============ Starting MobileViT-V1 training  ============
     start_time = time.time()
-    print("Starting MobileViT-V1 training!")
+    print("Starting training!")
     progress_bar = tqdm(range(args.epochs))
 
-    max_accuracy = 0.5
+    max_accuracy = 80
     # train
     for epoch in range(args.epochs):
         if args.enable:
@@ -134,8 +151,17 @@ def main():
         train_stats = train_one_epoch(mvit_without_ddp, criterion, data_loaderTrain, optimizer, device, epoch, loss_scaler,
                                       lr_schedule, mixup_fn=mixup_fn)
 
+        summary_writer.add_scalar('train/loss', train_stats['loss'], epoch)
+        summary_writer.add_scalar('train/lr', train_stats['lr'], epoch)
+
         # Necessary to pad predictions and labels for being gathered
-        val_stats = evaluate(data_loaderEval, mvit, device, 1)
+        val_stats = evaluate(data_loaderEval, mvit, device, epoch, (1, 5))
+
+        summary_writer.add_scalar('eval/loss', val_stats['loss'], epoch)
+        summary_writer.add_scalar('eval/acc1', val_stats['acc1'], epoch)
+        if val_stats.get('acc5', False):
+            summary_writer.add_scalar('eval/acc5', val_stats['acc5'], epoch)
+
         print(f"Accuracy of the network on the {lens_val} test images: {val_stats['acc1']:.1f}%")
 
         progress_bar.update(1)
@@ -152,7 +178,7 @@ def main():
             save_dict['mixed_scaler'] = mixed_scaler.state_dict()
 
         if val_stats['acc1'] > max_accuracy:
-            utils.save_on_master(save_dict, os.path.join(args.output_dir, f'checkpoint_{args.model_name}_{epoch + 1}.pth'))
+            utils.save_on_master(save_dict, os.path.join(args.output_dir, f'{args.model_name}_{epoch + 1}_{val_stats["acc1"]:.2f}.pth'))
             max_accuracy = max(max_accuracy, val_stats["acc1"])
             print(f'#############################################################  Max accuracy: {max_accuracy:.2f}%')
 
@@ -164,6 +190,7 @@ def main():
             with (Path(args.output_dir) / "log.txt").open("a") as f:
                 f.write(json.dumps(log_stats) + '\n')
 
+    summary_writer.close()
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
     print('Training time {}'.format(total_time_str))

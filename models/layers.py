@@ -290,8 +290,11 @@ def load_state_from_net(model: torch.nn.Module, path: str = None) -> nn.Module:
         model_state_dict = {}
 
         for ms, ns in zip(model_s, net_state_dict):
-            if ns in [nsw_fc_key, nsb_fc_key]:
-                continue
+            if ms is None or ns is None:
+                break
+            # skip classifier's weight init
+            if 'classifier' in ns.split('.')[0] or 'head' in ns.split('.')[0]:
+                break
             assert model_s[ms].shape == net_state_dict[ns].shape, \
                 ValueError(f"({ms} : {list(model_s[ms].shape)}) isn't matched to net_state({ns} : "
                            f"{list(net_state_dict[ns].shape)})")

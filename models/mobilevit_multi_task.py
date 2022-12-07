@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*- 
 """
 @Author : Chan ZiWen
-@Date : 2022/10/24 16:08
+@Date : 2022/11/25 18:05
 File Description:
 
 reference paper: https://arxiv.org/abs/2110.02178
@@ -143,8 +143,10 @@ class MobileViT(nn.Module):
         self.classifier.add_module(name='reshape', module=Reshape(-1, channels[-1]))
         if 0. < self.classifier_dropout < 1.0:
             self.classifier.add_module(name='dropout', module=nn.Dropout(p=args['classifier_dropout'], inplace=True))
-        self.classifier.add_module(name='fc', module=nn.Linear(channels[-1], num_classes))
+        self.classifier.add_module(name='fc', module=nn.Linear(channels[-1], 2))
 
+        self.sigmoid = torch.nn.Sigmoid()
+        self.softmax = torch.nn.Softmax()
         # initializing  the weight and bias of all layers
         if args['finetune'] is None or not os.path.exists(args['finetune']):
             init_layers(self.modules(), args)
@@ -159,11 +161,12 @@ class MobileViT(nn.Module):
         y = self.layer4(y)
         y = self.layer5(y)
 
-        y = self.classifier(y)
-        return y
+        out = self.classifier(y)
+
+        return out
 
 
-def Mobilevit(args: Dict = None):
+def mobilevit(args: Dict = None):
     model = MobileViT(args['dims'], args['channels'], args['num_classes'], args['transformer_blocks'], args['expansion'],
                      args['conv_kernel_size'], args['patch_size'], args['number_heads'], args)
     if isinstance(args['finetune'], str) and os.path.exists(args['finetune']):
@@ -179,30 +182,30 @@ def print_mem(x):
 
 
 # if __name__ == '__main__':
-# 
+#
 #     # image = '/mnt/chenziwen/cat.jpg'
 #     image = '/mnt/chenziwen/Datasets/dc/test/411.jpg'
 #     from PIL import Image
 #     from torchvision.transforms import Compose, ToTensor, Resize, CenterCrop
-# 
-#     # img = Image.open(image)
-#     #
-#     # trans = Compose([
-#     #     CenterCrop([128, 128]),
-#     #     Resize([256, 256]),
-#     #     ToTensor()
-#     # ])
-#     # img_t = trans(img)
-#     # img_t = img_t.unsqueeze_(0).cuda()
-#     # print(img_t.shape)
-#     #
-#     # from capreg.opts import parser
-#     #
-#     # args = parser()
-#     # mvit_s = mobilevit(args.model).cuda()
-#     # for m in mvit_s.modules():
-#     #     print(m)
-#     # mvit_s.eval()
+#
+#     img = Image.open(image)
+#
+#     trans = Compose([
+#         CenterCrop([128, 128]),
+#         Resize([256, 256]),
+#         ToTensor()
+#     ])
+#     img_t = trans(img)
+#     img_t = img_t.unsqueeze_(0).cuda()
+#     print(img_t.shape)
+#
+#     from capreg.opts import parser
+#
+#     args = parser()
+#     mvit_s = mobilevit(args.model).cuda()
+#     for m in mvit_s.modules():
+#         print(m)
+#     mvit_s.eval()
 #     # classifier
 #     d = {'a': 12, 'b': 10}
 #     print(d.get('c', None))

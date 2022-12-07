@@ -1,5 +1,5 @@
 #common:
-model_name: "semobilevit_s"
+model_name: "mobilevit"
 run_label: "run_1"
 log_freq: 500
 seed: 1234
@@ -24,7 +24,7 @@ dataset:
     saturation: 0.2
     hue: 0.1
     #           Mixup params
-    mixup: 0.4    # 'mixup alpha, mixup enabled if > 0. (default: 0.8)'
+    mixup: 0.5    # 'mixup alpha, mixup enabled if > 0. (default: 0.8)'
     cutmix: 0.0   # 'cutmix alpha, cutmix enabled if > 0. (default: 1.0)'
     #           Random Erase params
     reprob: 0.25
@@ -43,7 +43,7 @@ output_dir: '/mnt/chenziwen/cv/capreg/checkpoints'
 #Learning rate schedule parameters
 sched: "cosine"
 lr: 0.0003
-epochs: 200
+epochs: 100
 cooldown_epochs: 0
 warmup_epochs: 0
 warmup_lr: 0.000001
